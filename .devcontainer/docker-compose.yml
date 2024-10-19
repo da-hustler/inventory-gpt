@@ -1,49 +1,33 @@
+  GNU nano 6.2                                    docker-compose.yml *                                           
+version: '3'
 services:
   db:
     image: postgres:13
-    restart: unless-stopped
-    expose:
-      - 5432/tcp
     volumes:
-      - inventreedatabase:/var/lib/postgresql/data:z
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: inventree
+      POSTGRES_DB: inventree_db
       POSTGRES_USER: inventree_user
       POSTGRES_PASSWORD: inventree_password
-
-  redis:
-    image: redis:7.0
-    restart: always
-    expose:
-      - 6379
+    networks:
+      - inventree_network
 
   inventree:
-    build:
-      context: ..
-      dockerfile: ../InvenTree/contrib/container/Dockerfile
-      target: dev
-      args:
-        base_image: "mcr.microsoft.com/vscode/devcontainers/base:alpine-3.18"
-        data_dir: "dev"
-    volumes:
-      - ../:/home/inventree:z
-
+    image: inventree/inventree:latest
+    ports:
+      - "8000:8000"
     environment:
-      INVENTREE_DEBUG: True
-      INVENTREE_DB_ENGINE: postgresql
-      INVENTREE_DB_NAME: inventree
-      INVENTREE_DB_HOST: db
-      INVENTREE_DB_USER: inventree_user
-      INVENTREE_DB_PASSWORD: inventree_password
-      INVENTREE_CACHE_HOST: redis
-      INVENTREE_CACHE_PORT: 6379
-      INVENTREE_PLUGINS_ENABLED: True
-      INVENTREE_SITE_URL: http://localhost:8000
-      INVENTREE_CORS_ORIGIN_ALLOW_ALL: True
-      INVENTREE_PY_ENV: /home/inventree/dev/venv
-
+      DB_NAME: inventree_db
+      DB_USER: inventree_user
+      DB_PASS: inventree_password
+      DB_HOST: db
+    networks:
+      - inventree_network
     depends_on:
       - db
 
 volumes:
-  inventreedatabase:
+  postgres_data:
+
+networks:
+  inventree_network:
